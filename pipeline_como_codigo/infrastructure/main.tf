@@ -11,22 +11,27 @@ locals {
   ]
 }
 
-#RECURSO "GOOGLE PROJECT SERVICE" UTILIZADO PARA LLAMAR AUTOMATICAMANETE A LAS APIS DESDE UN SOLO RECURSO
+###################FASE 1: HABILITACIÓN DE APIS###################
+#RECURSO "PROJECT SERVICE" UTILIZADO PARA LLAMAR AUTOMATICAMANETE A LAS APIS DESDE UN SOLO RECURSO
+
 resource "google_project_service" "activacion_de_servicios" {
   for_each = toset(local.services) #llamada a una lista para iterar de manera no secuencial
   project  = var.project_id  #proyecto en ejecucion "betops"
   service  = each.key #clave de acceso actual
 }
 
-resource "google_sourcerepo_repository" "repo" {
-  depends_on = [
-    google_project_service.enabled_service["sourcerepo.googleapis.com"]
-  ]
-
+###################FASE 2: CONFIGURAR CLOUD BUILD###################
+#RECURSO "SOURCE REPO REPOSITORY" 
+#> ETAPA 1 CI/CD: CREACIÓN DE REPO (COMMIT)
+resource "google_sourcerepo_repository" "repo_devops" {
+  depends_on = [ google_project_service.enabled_service["sourcerepo.googleapis.com"] ]
   name = "${var.namespace}-repo"
 } 
 
-locals { #A
+#RECURSO "CLOUD BUILD TRIGGER" 
+#> ETAPA 2 -3 CI/CD: PRUEBAS Y CONSTRUCCIÓN
+# PASOS REQUERIDOS PARA CLOUD BUILD
+locals { 
   image = "gcr.io/${var.project_id}/${var.namespace}"
   steps = [
     {
@@ -51,9 +56,7 @@ locals { #A
 }
 
 resource "google_cloudbuild_trigger" "trigger" {
-  depends_on = [
-    google_project_service.enabled_service["cloudbuild.googleapis.com"]
-  ]
+  depends_on = [ google_project_service.enabled_service["cloudbuild.googleapis.com"] ]
 
   trigger_template {
     branch_name = "master"
@@ -66,12 +69,14 @@ resource "google_cloudbuild_trigger" "trigger" {
       content {
         name = step.value.name
         args = step.value.args
-        env  = lookup(step.value, "env", null) #B
+        env  = lookup(step.value, "env", null) 
       }
     }
   }
 }
-
+###################FASE 3: I AM ACCESS###################
+#RECURSO "PROJECT IAM MEMBER" 
+#> ETAPA 4 CI/CD: RELEASE
 data "google_project" "project" {}
 
 resource "google_project_iam_member" "cloudbuild_roles" {
@@ -82,21 +87,23 @@ resource "google_project_iam_member" "cloudbuild_roles" {
   member     = "serviceAccount:${data.google_project.project.number}@cloudbuild.gserviceaccount.com"
 } 
 
+###################FASE 4: CONFIGURAR CLOUD RUN###################
+#RECURSO "CLOUD RUN SERVICE" 
+#> ETAPA 5 CI/CD: DEPLOY
 resource "google_cloud_run_service" "service" {
-  depends_on = [
-    google_project_service.enabled_service["run.googleapis.com"]
-  ]
+  depends_on = [ google_project_service.enabled_service["run.googleapis.com"] ]
   name     = var.namespace
   location = var.region
 
   template {
     spec {
       containers {
-        image = "us-docker.pkg.dev/cloudrun/container/hello" #A
+        image = "us-docker.pkg.dev/cloudrun/container/hello" #OJO CON ESTA IMAGEN,usa una imagen demo inicialmente 
       }
     }
   }
 }
+
 
 data "google_iam_policy" "admin" {
   binding {
@@ -107,6 +114,7 @@ data "google_iam_policy" "admin" {
   }
 }
 
+#RECURSO "CLOUD RUN SERVICE IAM POLICY"
 resource "google_cloud_run_service_iam_policy" "policy" {
   location    = var.region
   project     = var.project_id
