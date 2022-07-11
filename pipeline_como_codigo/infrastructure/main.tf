@@ -14,7 +14,7 @@ locals {
 ###################FASE 1: HABILITACIÓN DE APIS###################
 #RECURSO "PROJECT SERVICE" UTILIZADO PARA LLAMAR AUTOMATICAMANETE A LAS APIS DESDE UN SOLO RECURSO
 
-resource "google_project_service" "activacion_de_servicios" {
+resource "google_project_service" "enabled_service" {
   for_each = toset(local.services) #llamada a una lista para iterar de manera no secuencial
   project  = var.project_id  #proyecto en ejecucion "betops"
   service  = each.key #clave de acceso actual
@@ -23,7 +23,7 @@ resource "google_project_service" "activacion_de_servicios" {
 ###################FASE 2: CONFIGURAR CLOUD BUILD###################
 #RECURSO "SOURCE REPO REPOSITORY" 
 #> ETAPA 1 CI/CD: CREACIÓN DE REPO (COMMIT)
-resource "google_sourcerepo_repository" "repo_devops" {
+resource "google_sourcerepo_repository" "repo" {
   depends_on = [ google_project_service.enabled_service["sourcerepo.googleapis.com"] ]
   name = "${var.namespace}-repo"
 } 
