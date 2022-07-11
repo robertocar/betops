@@ -1,25 +1,21 @@
+#TFM_UNIR_CICD_PIPELINE_COMO_CODIGO
+
+#DEFINICION DE SERVICIOS (ACCESIBLES A TRAVÉS DE APIS) A UTILIZAR
 locals {
   services = [ 
-    "sourcerepo.googleapis.com",
-    "cloudbuild.googleapis.com",
-    "run.googleapis.com",
-    "iam.googleapis.com",
+    "sourcerepo.googleapis.com", #Cloud Source Repositories API
+    "cloudbuild.googleapis.com", #Cloud Build API
+    "iam.googleapis.com",        #Identity and Access Management (IAM) API
+    "run.googleapis.com",        #Cloud Run API
+
   ]
 }
 
-resource "google_project_service" "enabled_service" {
-  for_each = toset(local.services)
-  project  = var.project_id
-  service  = each.key
-
-  provisioner "local-exec" { 
-    command = "sleep 60"
-  }
-
-  provisioner "local-exec" {
-    when    = destroy
-    command = "sleep 15"
-  }
+#RECURSO "GOOGLE PROJECT SERVICE" UTILIZADO PARA LLAMAR AUTOMATICAMANETE A LAS APIS DESDE UN SOLO RECURSO
+resource "google_project_service" "activacion_de_servicios" {
+  for_each = toset(local.services) #llamada a una lista para iterar de manera no secuencial
+  project  = var.project_id  #proyecto en ejecucion "betops"
+  service  = each.key #clave de acceso actual
 }
 
 resource "google_sourcerepo_repository" "repo" {
