@@ -1,15 +1,15 @@
 variable "project_id" {
-  description = "The GCP project id"
+  description = "ID del proyecto de GPC"
   type        = string
 }
 
 variable "region" {
   default     = "us-central1"
-  description = "GCP region"
+  description = "Región a utilizar de GCP"
   type        = string
 }
 
 variable "namespace" {
-  description = "The project namespace to use for unique resource naming"
+  description = "Namespace para identificar a los recursos del proyecto "
   type        = string
 } 
