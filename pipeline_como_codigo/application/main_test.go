@@ -14,7 +14,7 @@ func TestGETIndex(t *testing.T) {
 		IndexServer(response, request)
 
 		got := response.Body.String()
-		want := "Automate all the things!"
+		want := "TFM UNIR"
 
 		if got != want {
 			t.Errorf("got '%s', want '%s'", got, want)

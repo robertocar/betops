@@ -1,3 +1,6 @@
+#DEFINICIÓN DE VERSIONES DE TERRAFORM & GOOGLE
+#ROBERTO CÁRDENAS
+
 terraform {
   required_version = ">= 0.15"
   required_providers {
@@ -7,3 +10,4 @@ terraform {
       }
   }
 }
+
